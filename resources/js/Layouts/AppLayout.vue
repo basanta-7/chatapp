@@ -26,6 +26,9 @@
                                 <jet-nav-link :href="route('post')" :active="route().current('post')">
                                     Post
                                 </jet-nav-link>
+                                <jet-nav-link :href="route('feed')" :active="route().current('feed')">
+                                    Feed
+                                </jet-nav-link>
                             </div>
                         </div>
 

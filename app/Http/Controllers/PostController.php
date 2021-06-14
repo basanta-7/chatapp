@@ -7,6 +7,7 @@ use App\Models\Post;
 use Inertia\Inertia;
 use Illuminate\Support\Facades\Mail;
 use App\Events\NewPostCreated;
+use Image;
 
 class PostController extends Controller
 {
@@ -17,8 +18,10 @@ class PostController extends Controller
      */
     public function index()
     {
-        $posts = Post::with('user:name,id')->latest()->paginate(20);
-        return $posts;
+        $posts = Post::with('user:name,id')->latest()->paginate(7);
+        return Inertia::render('Post/Index',[
+            'posts' => $posts,
+        ]);
     }
 
     /**
@@ -38,23 +41,38 @@ class PostController extends Controller
      * @return \Illuminate\Http\Response
      */
     public function store(Request $request)
-    {
-        $inputs['user_id'] = \Auth::id();
-        $request->merge($inputs);
-        // dd($request->all());
+    {        
         $request->validate([
             'title' => 'required',
             'body' => 'required',
             'excerpt' => 'required',
             'status' => 'required|numeric',
+            'images' => 'image',
         ]);
 
-        $post = Post::create($request->only(['title', 'body', 'excerpt', 'status', 'user_id']));
+        $inputs['user_id'] = \Auth::id();
 
-        event(new NewPostCreated($post));
+        if($request->images){
+            $image = $request->images;
+            $filename = time();
+            $extension = $image->getClientOriginalExtension();
+            
+            $image = Image::make($image)->save(public_path('storage/uploads/'.$filename.'.'.$extension));
 
-        return Inertia::render('Post/Index');
-        // return redirect()->route('posts.index')->with('successMessage', 'Post Created Successfully');
+            $image->resize(400,500, function($constraint){
+                $constraint->aspectRatio();
+                $constraint->upsize();
+            })->save(public_path('storage/uploads/'.$filename.'._thumbnail.'.$extension));
+            
+            $inputs['image'] = $filename.'.'.$extension;
+        }
+
+        $request->merge($inputs);
+
+        $post = Post::create($request->only(['title', 'body', 'excerpt', 'image', 'status', 'user_id']));
+
+        // event(new NewPostCreated($post));
+        return redirect()->route('post')->with('message', 'Post Created Successfully');
     }
 
     /**
@@ -76,7 +94,10 @@ class PostController extends Controller
      */
     public function edit($id)
     {
-        //
+        $post = Post::find($id);
+        return Inertia::render('Post/Edit', [
+            'post' => $post
+        ]);
     }
 
     /**
@@ -88,7 +109,16 @@ class PostController extends Controller
      */
     public function update(Request $request, $id)
     {
-        //
+        $request->validate([
+            'title' => 'required',
+            'body' => 'required',
+            'excerpt' => 'required',
+            'status' => 'required|numeric',
+        ]);   
+
+        $post = Post::find($id);
+        $post->update($request->all());
+        return redirect()->route('post')->with('message', 'Post Updated Successfully');
     }
 
     /**
@@ -99,6 +129,8 @@ class PostController extends Controller
      */
     public function destroy($id)
     {
-        //
+        $post = Post::find($id);
+        $post->delete();            
+        return redirect()->back()->with('message', 'Post deleted succesfully.');
     }
 }

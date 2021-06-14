@@ -2,7 +2,7 @@
     <app-layout>
         <template #header>
             <h2 class="font-semibold text-xl text-gray-800 leading-tight">
-                Create Post Form
+                Edit Post Form
                 <inertia-link :href="route('post')" class="bg-purple-500 ml-1 p-1 text-sm text-white px-2 rounded hover:bg-blue-400 float-right">View All</inertia-link>
             </h2>
         </template>
@@ -10,7 +10,7 @@
         <div class="py-12">
             <div class="max-w-7xl mx-auto sm:px-6 lg:px-8">
                 <div class="bg-white p-4 overflow-hidden shadow-xl sm:rounded-lg">
-                    <form action="/posts" method="post" @submit.prevent="createPost">
+                    <form action="#" method="PATCH" @submit.prevent="updatePost">
                     	<div class="form-group m-3">
                     		<label for="title" class="w-full text-gray-500">* Title</label>
     	                    <input type="text" class="w-full p-2 border rounded" id="title" v-model="form.title" placeholder="title">    
@@ -34,18 +34,18 @@
     	                    </select>                
                             <div v-if="errors.status" class="text-red-500">{{ errors.status }}</div>		
                     	</div>
-
-                        <div class="form-group m-3">
-                            <label for="" class="w-full text-gray-500">* Image</label>
-                            <br>
-                            <input type="file" @change="setImage" accept="image/*" id="images">
-                            <div v-if="errors.images" class="text-red-500">{{ errors.images }}</div>        
-                        </div>
-                        
                         <div class="form-group m-3 mt-4">
-                            <hr>
-                            <button type="submit" :disabled="form.processing" class="border rounded mt-2 bg-green-500 text-white px-2 py-1 hover:bg-green-700">Save</button>
-                            <button type="reset" @click.prevent="resetForm()" class="border rounded mt-2 bg-pink-500 text-white px-2 py-1 ml-2 hover:bg-pink-700">Reset</button>
+                            <button type="submit" class="border rounded bg-green-500 text-white px-2 py-1 hover:bg-green-700">
+                                <div v-if="isLoading" class="text-center">
+                                    <div class="trinity-rings-spinner my-1">
+                                      <div class="circle"></div>
+                                      <div class="circle"></div>
+                                      <div class="circle"></div>
+                                    </div>
+                                </div>
+                                Save
+                            </button>
+                            <button @click.prevent="resetForm()" class="border rounded bg-pink-500 text-white px-2 py-1 ml-2 hover:bg-pink-700">Reset</button>
                         </div>
                     </form>
                 </div>
@@ -63,22 +63,24 @@
         },
         props: {
             errors: Object,
+            post: ''
         },
         data() {
             return{
                 form:{
-                    title: '',
-                    body: '',
-                    excerpt: '',
-                    status: '',
-                    images: ''
-                }
+                    title: this.post.title,
+                    body: this.post.body,
+                    excerpt: this.post.excerpt,
+                    status: this.post.status,
+                },
+                isLoading: false
             }
         },
         methods: {
-            createPost(){
-                this.$inertia.post('/post', this.form)
+            updatePost(){
+                this.$inertia.patch(`/post/${this.post.id}`, this.form)
                 .then(() => {
+
                 });
             },
             resetForm(){
@@ -86,11 +88,7 @@
                 this.form.body = '';
                 this.form.excerpt = '';
                 this.form.status = '';
-                this.form.images = '';
-            },
-            setImage(e){
-                this.form.images = e.target.files[0];
             }
-        }
+        },
     }
 </script>
